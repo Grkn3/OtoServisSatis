@@ -4,16 +4,17 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using OtoServisSatis.Entities;
 using OtoServisSatis.Service.Abstract;
+using OtoServisSatis.WebUI.Utils;
 
 namespace OtoServisSatis.WebUI.Areas.Admin.Controllers
 {
     [Area("Admin"), Authorize]
     public class CarsController : Controller
     {
-        private readonly IService<Arac> _service;
+        private readonly ICarService _service;
         private readonly IService<Marka> _serviceMarka;
 
-        public CarsController(IService<Arac> service, IService<Marka> serviceMarka)
+        public CarsController(ICarService service, IService<Marka> serviceMarka)
         {
             _service = service;
             _serviceMarka = serviceMarka;
@@ -22,7 +23,7 @@ namespace OtoServisSatis.WebUI.Areas.Admin.Controllers
         // GET: CarsController
         public async Task<ActionResult> IndexAsync()
         {
-            var model = await _service.GetAllAsync();
+            var model = await _service.GetCustomCarList();
             return View(model);
         }
 
@@ -42,12 +43,15 @@ namespace OtoServisSatis.WebUI.Areas.Admin.Controllers
         // POST: CarsController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> CreateAsync(Arac arac)
+        public async Task<ActionResult> CreateAsync(Arac arac, IFormFile? Resim1, IFormFile? Resim2, IFormFile? Resim3)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
+                    arac.Resim1 = await FileHelper.FileLoaderAsync(Resim1,"/Img/Cars/");
+                    arac.Resim2 = await FileHelper.FileLoaderAsync(Resim2, filePath: "/Img/Cars/");
+                    arac.Resim3 = await FileHelper.FileLoaderAsync(Resim3, "/Img/Cars/");
                     await _service.AddAysnc(arac);
                     await _service.SaveAsync();
                     return RedirectToAction(nameof(Index));
@@ -72,12 +76,24 @@ namespace OtoServisSatis.WebUI.Areas.Admin.Controllers
         // POST: CarsController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> EditAsync(int id, Arac arac)
+        public async Task<ActionResult> EditAsync(int id, Arac arac, IFormFile? Resim1, IFormFile? Resim2, IFormFile? Resim3)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
+                    if (Resim1 is not null)
+                    {
+                        arac.Resim1 = await FileHelper.FileLoaderAsync(Resim1, "/Img/Cars/");
+                    }
+                    if (Resim2 is not null)
+                    {
+                        arac.Resim2 = await FileHelper.FileLoaderAsync(Resim2, "/Img/Cars/");
+                    }
+                    if (Resim3 is not null)
+                    {
+                        arac.Resim3 = await FileHelper.FileLoaderAsync(Resim3, "/Img/Cars/");
+                    }                   
                     _service.Update(arac);
                     await _service.SaveAsync();
                     return RedirectToAction(nameof(Index));
